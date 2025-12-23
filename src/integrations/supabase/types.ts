@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          address: string
+          birth_date: string
+          birth_place: string
+          created_at: string
+          email: string
+          emergency_contact: string
+          emergency_phone: string
+          full_name: string
+          gender: string
+          id: string
+          nik: string
+          notes: string | null
+          package_id: number
+          package_name: string
+          passport_number: string | null
+          phone: string
+          room_type: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address: string
+          birth_date: string
+          birth_place: string
+          created_at?: string
+          email: string
+          emergency_contact: string
+          emergency_phone: string
+          full_name: string
+          gender: string
+          id?: string
+          nik: string
+          notes?: string | null
+          package_id: number
+          package_name: string
+          passport_number?: string | null
+          phone: string
+          room_type: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          birth_date?: string
+          birth_place?: string
+          created_at?: string
+          email?: string
+          emergency_contact?: string
+          emergency_phone?: string
+          full_name?: string
+          gender?: string
+          id?: string
+          nik?: string
+          notes?: string | null
+          package_id?: number
+          package_name?: string
+          passport_number?: string | null
+          phone?: string
+          room_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

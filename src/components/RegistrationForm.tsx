@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Loader2, LogIn } from 'lucide-react';
 
 const registrationSchema = z.object({
   fullName: z.string()
@@ -54,7 +57,6 @@ const registrationSchema = z.object({
     .refine(val => !val || (val.length >= 6 && val.length <= 20), {
       message: 'Nomor paspor harus 6-20 karakter'
     }),
-  passportExpiry: z.string().optional(),
   emergencyContact: z.string()
     .min(3, 'Nama kontak darurat minimal 3 karakter')
     .max(100, 'Nama kontak darurat maksimal 100 karakter'),
@@ -78,19 +80,20 @@ interface RegistrationFormProps {
 const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
       fullName: '',
-      email: '',
+      email: user?.email || '',
       phone: '',
       nik: '',
       birthPlace: '',
       birthDate: '',
       address: '',
       passportNumber: '',
-      passportExpiry: '',
       emergencyContact: '',
       emergencyPhone: '',
       notes: '',
@@ -98,21 +101,77 @@ const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) =>
   });
 
   const onSubmit = async (data: RegistrationFormData) => {
+    if (!user) {
+      toast({
+        title: 'Login Diperlukan',
+        description: 'Silakan login terlebih dahulu untuk mendaftar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    console.log('Registration data:', { packageId, packageTitle, ...data });
-    
+    const { error } = await supabase.from('registrations').insert({
+      user_id: user.id,
+      package_id: packageId,
+      package_name: packageTitle,
+      full_name: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      nik: data.nik,
+      birth_place: data.birthPlace,
+      birth_date: data.birthDate,
+      gender: data.gender,
+      address: data.address,
+      passport_number: data.passportNumber || null,
+      emergency_contact: data.emergencyContact,
+      emergency_phone: data.emergencyPhone,
+      room_type: data.roomType,
+      notes: data.notes || null,
+    });
+
     setIsSubmitting(false);
-    setIsSuccess(true);
+
+    if (error) {
+      console.error('Registration error:', error);
+      toast({
+        title: 'Pendaftaran Gagal',
+        description: 'Terjadi kesalahan. Silakan coba lagi.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
+    setIsSuccess(true);
     toast({
       title: 'Pendaftaran Berhasil!',
       description: 'Tim kami akan segera menghubungi Anda untuk konfirmasi.',
     });
   };
+
+  // Show login prompt if not authenticated
+  if (!user) {
+    return (
+      <div className="text-center py-12 px-6 bg-secondary/50 rounded-2xl">
+        <LogIn className="w-16 h-16 text-primary mx-auto mb-4" />
+        <h3 className="font-heading text-2xl font-bold text-foreground mb-2">
+          Login Diperlukan
+        </h3>
+        <p className="text-muted-foreground mb-6">
+          Silakan login atau buat akun terlebih dahulu untuk mendaftar paket <strong>{packageTitle}</strong>.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button asChild variant="gold">
+            <Link to="/auth">Login / Daftar</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/">Kembali ke Beranda</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -125,9 +184,14 @@ const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) =>
           Terima kasih telah mendaftar paket <strong>{packageTitle}</strong>.<br />
           Tim kami akan menghubungi Anda dalam 1x24 jam untuk konfirmasi.
         </p>
-        <Button onClick={() => setIsSuccess(false)} variant="outline">
-          Daftar Lagi
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button onClick={() => navigate('/dashboard')} variant="gold">
+            Lihat Status Booking
+          </Button>
+          <Button onClick={() => setIsSuccess(false)} variant="outline">
+            Daftar Lagi
+          </Button>
+        </div>
       </div>
     );
   }
@@ -281,24 +345,10 @@ const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) =>
             control={form.control}
             name="passportNumber"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="md:col-span-2">
                 <FormLabel>Nomor Paspor</FormLabel>
                 <FormControl>
                   <Input placeholder="A1234567" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="passportExpiry"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Masa Berlaku Paspor</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
