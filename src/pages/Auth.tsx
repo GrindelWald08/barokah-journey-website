@@ -267,7 +267,11 @@ const Auth = () => {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                loginForm.reset();
+                signupForm.reset();
+              }}
               className="text-primary hover:underline font-medium"
             >
               {isLogin 
