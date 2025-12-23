@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Plane, Eye, EyeOff } from 'lucide-react';
+import { Loader2, ArrowLeft, Plane, Eye, EyeOff, Mail, CheckCircle } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Format email tidak valid'),
@@ -40,6 +40,8 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showVerificationReminder, setShowVerificationReminder] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
 
@@ -99,11 +101,8 @@ const Auth = () => {
       }
       toast({ title: 'Pendaftaran Gagal', description: message, variant: 'destructive' });
     } else {
-      toast({ 
-        title: 'Pendaftaran Berhasil', 
-        description: 'Akun Anda telah dibuat. Silakan login.'
-      });
-      setIsLogin(true);
+      setRegisteredEmail(data.email);
+      setShowVerificationReminder(true);
       signupForm.reset();
     }
   };
@@ -147,7 +146,44 @@ const Auth = () => {
             </p>
           </div>
 
-          {isLogin ? (
+          {showVerificationReminder ? (
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-heading text-xl font-bold text-foreground mb-2">
+                Cek Email Anda
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Kami telah mengirimkan link verifikasi ke <span className="font-medium text-foreground">{registeredEmail}</span>. 
+                Silakan cek inbox (atau folder spam) dan klik link untuk mengaktifkan akun Anda.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Button 
+                  variant="gold" 
+                  size="lg" 
+                  className="w-full"
+                  onClick={() => {
+                    setShowVerificationReminder(false);
+                    setIsLogin(true);
+                  }}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Sudah Verifikasi, Lanjut Login
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowVerificationReminder(false);
+                    setIsLogin(false);
+                  }}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Daftar dengan email lain
+                </button>
+              </div>
+            </div>
+          ) : isLogin ? (
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
