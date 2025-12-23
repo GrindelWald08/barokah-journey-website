@@ -1,127 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar, Star, Users, Clock, ChevronRight, Filter } from 'lucide-react';
-import madinahImage from '@/assets/madinah-mosque.jpg';
-import pilgrimsImage from '@/assets/happy-pilgrims.jpg';
-import heroImage from '@/assets/hero-kaaba.jpg';
-
-interface Package {
-  id: number;
-  title: string;
-  type: 'umrah' | 'haji';
-  price: number;
-  originalPrice?: number;
-  duration: string;
-  date: string;
-  month: string;
-  hotelRating: number;
-  seatsLeft: number;
-  image: string;
-  highlights: string[];
-  isPopular?: boolean;
-}
-
-const packages: Package[] = [
-  {
-    id: 1,
-    title: 'Umrah Reguler Hemat',
-    type: 'umrah',
-    price: 25000000,
-    originalPrice: 28000000,
-    duration: '9 Hari',
-    date: '15 Agustus 2024',
-    month: 'Agustus',
-    hotelRating: 4,
-    seatsLeft: 12,
-    image: heroImage,
-    highlights: ['Pesawat Saudia', 'Hotel 200m dari Masjid', 'Makan 3x'],
-  },
-  {
-    id: 2,
-    title: 'Umrah Premium',
-    type: 'umrah',
-    price: 35000000,
-    duration: '12 Hari',
-    date: '20 September 2024',
-    month: 'September',
-    hotelRating: 5,
-    seatsLeft: 8,
-    image: madinahImage,
-    highlights: ['Garuda Indonesia', 'Hotel Bintang 5', 'City Tour'],
-    isPopular: true,
-  },
-  {
-    id: 3,
-    title: 'Umrah Plus Turki',
-    type: 'umrah',
-    price: 45000000,
-    duration: '14 Hari',
-    date: '10 Oktober 2024',
-    month: 'Oktober',
-    hotelRating: 5,
-    seatsLeft: 15,
-    image: pilgrimsImage,
-    highlights: ['Istanbul Tour', 'Hagia Sophia', 'Blue Mosque'],
-  },
-  {
-    id: 4,
-    title: 'Umrah Ramadhan',
-    type: 'umrah',
-    price: 38000000,
-    duration: '10 Hari',
-    date: '5 Ramadhan 1446',
-    month: 'Ramadhan',
-    hotelRating: 5,
-    seatsLeft: 5,
-    image: heroImage,
-    highlights: ['Itikaf di Masjidil Haram', 'Buka Puasa', 'Lailatul Qadr'],
-    isPopular: true,
-  },
-  {
-    id: 5,
-    title: 'Haji Furoda VIP',
-    type: 'haji',
-    price: 180000000,
-    duration: '25 Hari',
-    date: 'Musim Haji 2025',
-    month: 'Haji',
-    hotelRating: 5,
-    seatsLeft: 3,
-    image: madinahImage,
-    highlights: ['Tanpa Antrian', 'Tenda VIP Mina', 'Pendampingan Eksklusif'],
-    isPopular: true,
-  },
-  {
-    id: 6,
-    title: 'Haji Plus',
-    type: 'haji',
-    price: 120000000,
-    duration: '22 Hari',
-    date: 'Musim Haji 2025',
-    month: 'Haji',
-    hotelRating: 4,
-    seatsLeft: 10,
-    image: pilgrimsImage,
-    highlights: ['Proses Cepat', 'Hotel Dekat', 'Muthawwif'],
-  },
-];
-
-const months = ['Semua', 'Agustus', 'September', 'Oktober', 'Ramadhan', 'Haji'];
-const priceRanges = [
-  { label: 'Semua Harga', min: 0, max: Infinity },
-  { label: '< 30 Juta', min: 0, max: 30000000 },
-  { label: '30 - 50 Juta', min: 30000000, max: 50000000 },
-  { label: '> 50 Juta', min: 50000000, max: Infinity },
-];
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
-};
+import { packages, formatPrice, months, priceRanges } from '@/data/packages';
 
 const PackagesSection = () => {
   const [selectedMonth, setSelectedMonth] = useState('Semua');
@@ -284,10 +165,12 @@ const PackagesSection = () => {
                 </div>
 
                 {/* CTA */}
-                <Button variant="outline" className="w-full group/btn">
-                  Detail Paket
-                  <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                </Button>
+                <Link to={`/paket/${pkg.id}`}>
+                  <Button variant="outline" className="w-full group/btn">
+                    Detail Paket
+                    <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
               </div>
             </div>
           ))}
