@@ -111,7 +111,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex">
       {/* Left Side - Decorative */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
-        <div className="absolute inset-0 islamic-pattern opacity-10" />
+        <div className="absolute inset-0 islamic-pattern opacity-10 pointer-events-none" />
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-primary-foreground">
           <Plane className="w-16 h-16 mb-6" />
           <h1 className="font-heading text-4xl font-bold text-center mb-4">
@@ -418,6 +418,11 @@ const Auth = () => {
             <button
               type="button"
               onClick={() => {
+                setShowVerificationReminder(false);
+                setRegisteredEmail('');
+                setIsLoading(false);
+                setShowPassword(false);
+                setShowConfirmPassword(false);
                 setIsLogin(!isLogin);
                 loginForm.reset();
                 signupForm.reset();
