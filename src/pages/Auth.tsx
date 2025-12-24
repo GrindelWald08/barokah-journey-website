@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRateLimit } from '@/hooks/useRateLimit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -44,6 +45,7 @@ const Auth = () => {
   const [registeredEmail, setRegisteredEmail] = useState('');
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
+  const { checkRateLimit, formatTimeRemaining } = useRateLimit();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -72,6 +74,24 @@ const Auth = () => {
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
+    
+    // Check rate limit for login attempts
+    const rateLimitResult = await checkRateLimit({
+      action_type: 'login',
+      max_attempts: 5,
+      window_minutes: 15,
+    });
+
+    if (!rateLimitResult.allowed) {
+      setIsLoading(false);
+      toast({
+        title: 'Terlalu Banyak Percobaan',
+        description: `Akun dikunci sementara. Coba lagi dalam ${formatTimeRemaining(rateLimitResult.reset_at)}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     const { error } = await signIn(data.email, data.password);
     setIsLoading(false);
 
@@ -91,6 +111,24 @@ const Auth = () => {
 
   const handleSignup = async (data: SignupFormData) => {
     setIsLoading(true);
+    
+    // Check rate limit for signup attempts
+    const rateLimitResult = await checkRateLimit({
+      action_type: 'registration',
+      max_attempts: 5,
+      window_minutes: 15,
+    });
+
+    if (!rateLimitResult.allowed) {
+      setIsLoading(false);
+      toast({
+        title: 'Terlalu Banyak Percobaan',
+        description: `Silakan coba lagi dalam ${formatTimeRemaining(rateLimitResult.reset_at)}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     const { error } = await signUp(data.email, data.password, data.fullName);
     setIsLoading(false);
 
