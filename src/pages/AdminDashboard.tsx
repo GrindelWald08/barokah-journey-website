@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -36,32 +33,12 @@ const statusOptions = [
 ];
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminCheck();
   const { toast } = useToast();
   
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    if (!adminLoading && !isAdmin && user) {
-      toast({
-        title: 'Akses Ditolak',
-        description: 'Anda tidak memiliki izin untuk mengakses halaman ini.',
-        variant: 'destructive',
-      });
-      navigate('/dashboard');
-    }
-  }, [isAdmin, adminLoading, user, navigate, toast]);
 
   const fetchRegistrations = async () => {
     setLoading(true);
@@ -84,10 +61,8 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchRegistrations();
-    }
-  }, [isAdmin]);
+    fetchRegistrations();
+  }, []);
 
   const updateStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase
@@ -138,20 +113,7 @@ const AdminDashboard = () => {
     paid: registrations.filter(r => r.status === 'paid').length,
   };
 
-  if (authLoading || adminLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Memverifikasi akses...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return null;
-  }
+  // Auth dan admin check sekarang di-handle oleh AdminRoute
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
