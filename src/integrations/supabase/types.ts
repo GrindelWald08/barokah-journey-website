@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      packages: {
+        Row: {
+          available_quota: number
+          created_at: string
+          departure_date: string
+          discount_price: number | null
+          duration: string
+          highlights: string[] | null
+          hotel_madinah: string | null
+          hotel_madinah_stars: number | null
+          hotel_makkah: string | null
+          hotel_makkah_stars: number | null
+          id: number
+          image_url: string | null
+          is_active: boolean
+          price: number
+          quota: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          available_quota?: number
+          created_at?: string
+          departure_date: string
+          discount_price?: number | null
+          duration: string
+          highlights?: string[] | null
+          hotel_madinah?: string | null
+          hotel_madinah_stars?: number | null
+          hotel_makkah?: string | null
+          hotel_makkah_stars?: number | null
+          id?: number
+          image_url?: string | null
+          is_active?: boolean
+          price: number
+          quota?: number
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          available_quota?: number
+          created_at?: string
+          departure_date?: string
+          discount_price?: number | null
+          duration?: string
+          highlights?: string[] | null
+          hotel_madinah?: string | null
+          hotel_madinah_stars?: number | null
+          hotel_makkah?: string | null
+          hotel_makkah_stars?: number | null
+          id?: number
+          image_url?: string | null
+          is_active?: boolean
+          price?: number
+          quota?: number
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
