@@ -124,7 +124,7 @@ const Auth = () => {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 relative z-10 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <Link 
             to="/" 
@@ -286,7 +286,7 @@ const Auth = () => {
                   control={signupForm.control}
                   name="fullName"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="relative z-10">
                       <FormLabel>Nama Lengkap</FormLabel>
                       <FormControl>
                         <Input placeholder="Nama lengkap Anda" {...field} />
@@ -300,10 +300,10 @@ const Auth = () => {
                   control={signupForm.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="relative z-10">
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="email@contoh.com" {...field} />
+                        <Input type="email" placeholder="email@contoh.com" autoComplete="email" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
