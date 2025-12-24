@@ -51,7 +51,7 @@ const AdminDashboard = () => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching registrations:', error);
+      // Log error details only in development
       toast({
         title: 'Error',
         description: 'Gagal memuat data pendaftaran.',

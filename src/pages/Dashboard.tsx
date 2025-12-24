@@ -38,7 +38,7 @@ const Dashboard = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching registrations:', error);
+        // Error handled silently - user sees empty state
       } else {
         setRegistrations(data || []);
       }

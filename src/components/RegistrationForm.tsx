@@ -174,7 +174,7 @@ Mohon informasi selanjutnya untuk proses pembayaran. Terima kasih.`;
     setIsSubmitting(false);
 
     if (error) {
-      console.error('Registration error:', error);
+      // Registration failed - show user-friendly message
       toast({
         title: 'Pendaftaran Gagal',
         description: 'Terjadi kesalahan. Silakan coba lagi.',
