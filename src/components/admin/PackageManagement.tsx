@@ -80,7 +80,7 @@ const PackageManagement = () => {
       .order('id', { ascending: true });
 
     if (error) {
-      console.error('Error fetching packages:', error);
+      // Error handled by toast notification
       toast({
         title: 'Error',
         description: 'Gagal memuat data paket.',
@@ -176,7 +176,7 @@ const PackageManagement = () => {
         description: 'Gambar berhasil diupload.',
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      // Upload failed - show user-friendly message
       toast({
         title: 'Error',
         description: 'Gagal mengupload gambar.',

@@ -19,7 +19,7 @@ export const useAdminCheck = () => {
         .rpc('has_role', { _user_id: user.id, _role: 'admin' });
 
       if (error) {
-        console.error('Error checking admin role:', error);
+        // Admin check failed - default to non-admin
         setIsAdmin(false);
       } else {
         setIsAdmin(data === true);
