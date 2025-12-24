@@ -184,7 +184,7 @@ const Auth = () => {
               </div>
             </div>
           ) : isLogin ? (
-            <Form {...loginForm}>
+            <Form key="login" {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
@@ -280,7 +280,7 @@ const Auth = () => {
               </form>
             </Form>
           ) : (
-            <Form {...signupForm}>
+            <Form key="signup" {...signupForm}>
               <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
                 <FormField
                   control={signupForm.control}
@@ -289,7 +289,7 @@ const Auth = () => {
                     <FormItem className="relative z-10">
                       <FormLabel>Nama Lengkap</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nama lengkap Anda" {...field} />
+                        <Input placeholder="Nama lengkap Anda" autoComplete="name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
