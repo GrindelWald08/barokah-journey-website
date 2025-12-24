@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useRateLimit } from '@/hooks/useRateLimit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,6 +86,7 @@ const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) =>
   const [isSuccess, setIsSuccess] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { checkRateLimit, formatTimeRemaining } = useRateLimit();
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
@@ -151,6 +153,23 @@ Mohon informasi selanjutnya untuk proses pembayaran. Terima kasih.`;
     }
 
     setIsSubmitting(true);
+    
+    // Check rate limit before proceeding
+    const rateLimitResult = await checkRateLimit({
+      action_type: 'registration',
+      max_attempts: 5,
+      window_minutes: 15,
+    });
+
+    if (!rateLimitResult.allowed) {
+      setIsSubmitting(false);
+      toast({
+        title: 'Terlalu Banyak Percobaan',
+        description: `Silakan coba lagi dalam ${formatTimeRemaining(rateLimitResult.reset_at)}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
     
     const { error } = await supabase.from('registrations').insert({
       user_id: user.id,
