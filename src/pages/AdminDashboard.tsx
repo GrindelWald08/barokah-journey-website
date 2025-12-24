@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Users, Package, Search, RefreshCw, Download, FileSpreadsheet } from 'lucide-react';
+import { Shield, Users, Package, Search, RefreshCw, Download, FileSpreadsheet, ShieldAlert } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PackageManagement from '@/components/admin/PackageManagement';
+import RateLimitManagement from '@/components/admin/RateLimitManagement';
 
 interface Registration {
   id: string;
@@ -202,7 +203,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="registrations" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="registrations" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Pendaftaran
@@ -210,6 +211,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="packages" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Paket Umroh
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4" />
+              Rate Limits
             </TabsTrigger>
           </TabsList>
 
@@ -365,6 +370,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="packages">
             <PackageManagement />
+          </TabsContent>
+
+          <TabsContent value="security">
+            <RateLimitManagement />
           </TabsContent>
         </Tabs>
       </main>
