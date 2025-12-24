@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Plus, Pencil, Trash2, RefreshCw, Percent, Users, DollarSign } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, RefreshCw, Percent, Users, DollarSign, Upload, Image, X, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface PackageData {
@@ -68,6 +68,9 @@ const PackageManagement = () => {
   const [formData, setFormData] = useState(emptyPackage);
   const [highlightsText, setHighlightsText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPackages = async () => {
     setLoading(true);
@@ -97,6 +100,7 @@ const PackageManagement = () => {
     setEditingPackage(null);
     setFormData(emptyPackage);
     setHighlightsText('');
+    setImagePreview(null);
     setDialogOpen(true);
   };
 
@@ -120,8 +124,77 @@ const PackageManagement = () => {
       is_active: pkg.is_active,
     });
     setHighlightsText((pkg.highlights || []).join('\n'));
+    setImagePreview(pkg.image_url || null);
     setDialogOpen(true);
   };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Hanya file gambar yang diperbolehkan.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'Ukuran file maksimal 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('package-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('package-images')
+        .getPublicUrl(fileName);
+
+      setFormData({ ...formData, image_url: publicUrl });
+      setImagePreview(publicUrl);
+      
+      toast({
+        title: 'Berhasil',
+        description: 'Gambar berhasil diupload.',
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal mengupload gambar.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData({ ...formData, image_url: '' });
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
 
   const handleSave = async () => {
     if (!formData.title || !formData.price || !formData.duration || !formData.departure_date) {
@@ -432,12 +505,62 @@ const PackageManagement = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="image_url">URL Gambar</Label>
+                    <Label>Gambar Paket</Label>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-48 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={removeImage}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      >
+                        {uploading ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <span className="text-sm text-muted-foreground">Mengupload...</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2">
+                            <Upload className="h-8 w-8 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Klik untuk upload gambar</span>
+                            <span className="text-xs text-muted-foreground">Maksimal 5MB</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="text-center text-xs text-muted-foreground">atau</div>
+                    
                     <Input
                       id="image_url"
                       value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      placeholder="https://..."
+                      onChange={(e) => {
+                        setFormData({ ...formData, image_url: e.target.value });
+                        setImagePreview(e.target.value || null);
+                      }}
+                      placeholder="Masukkan URL gambar..."
                     />
                   </div>
                 </div>
