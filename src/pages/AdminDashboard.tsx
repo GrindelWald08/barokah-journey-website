@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Users, Package, Search, RefreshCw } from 'lucide-react';
+import { Shield, Users, Package, Search, RefreshCw, Download, FileSpreadsheet } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -113,6 +114,79 @@ const AdminDashboard = () => {
     paid: registrations.filter(r => r.status === 'paid').length,
   };
 
+  const getStatusLabel = (status: string) => {
+    const statusOption = statusOptions.find(s => s.value === status);
+    return statusOption?.label || status;
+  };
+
+  const formatExportData = (data: Registration[]) => {
+    return data.map((reg, index) => ({
+      'No': index + 1,
+      'Nama Lengkap': reg.full_name,
+      'Email': reg.email,
+      'Telepon': reg.phone,
+      'NIK': reg.nik,
+      'Paket': reg.package_name,
+      'Tipe Kamar': reg.room_type.charAt(0).toUpperCase() + reg.room_type.slice(1),
+      'Status': getStatusLabel(reg.status),
+      'Tanggal Daftar': new Date(reg.created_at).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+    }));
+  };
+
+  const exportToCSV = () => {
+    const dataToExport = formatExportData(filteredRegistrations);
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+    
+    const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `pendaftaran_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: 'Export Berhasil',
+      description: `${filteredRegistrations.length} data berhasil diexport ke CSV.`,
+    });
+  };
+
+  const exportToExcel = () => {
+    const dataToExport = formatExportData(filteredRegistrations);
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    
+    // Set column widths
+    const colWidths = [
+      { wch: 5 },   // No
+      { wch: 25 },  // Nama Lengkap
+      { wch: 30 },  // Email
+      { wch: 15 },  // Telepon
+      { wch: 20 },  // NIK
+      { wch: 30 },  // Paket
+      { wch: 15 },  // Tipe Kamar
+      { wch: 15 },  // Status
+      { wch: 20 },  // Tanggal Daftar
+    ];
+    worksheet['!cols'] = colWidths;
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pendaftaran');
+    
+    XLSX.writeFile(workbook, `pendaftaran_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: 'Export Berhasil',
+      description: `${filteredRegistrations.length} data berhasil diexport ke Excel.`,
+    });
+  };
+
   // Auth dan admin check sekarang di-handle oleh AdminRoute
 
   return (
@@ -191,6 +265,22 @@ const AdminDashboard = () => {
               <Button variant="outline" onClick={fetchRegistrations} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={exportToCSV} 
+                disabled={loading || filteredRegistrations.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                CSV
+              </Button>
+              <Button 
+                variant="gold" 
+                onClick={exportToExcel} 
+                disabled={loading || filteredRegistrations.length === 0}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Excel
               </Button>
             </div>
 
