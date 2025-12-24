@@ -27,7 +27,7 @@ import { toast } from '@/hooks/use-toast';
 import { CheckCircle, Loader2, LogIn, MessageCircle } from 'lucide-react';
 
 // Nomor WhatsApp admin (ganti dengan nomor yang benar)
-const ADMIN_WHATSAPP = '6281234567890';
+const ADMIN_WHATSAPP = '628287782408192';
 
 const registrationSchema = z.object({
   fullName: z.string()
