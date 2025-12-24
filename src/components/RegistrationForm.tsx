@@ -24,7 +24,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Loader2, LogIn } from 'lucide-react';
+import { CheckCircle, Loader2, LogIn, MessageCircle } from 'lucide-react';
+
+// Nomor WhatsApp admin (ganti dengan nomor yang benar)
+const ADMIN_WHATSAPP = '6281234567890';
 
 const registrationSchema = z.object({
   fullName: z.string()
@@ -100,6 +103,43 @@ const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) =>
     },
   });
 
+  const openWhatsAppWithMessage = (data: RegistrationFormData) => {
+    const roomTypeLabel = {
+      quad: 'Quad (4 orang)',
+      triple: 'Triple (3 orang)',
+      double: 'Double (2 orang)',
+    }[data.roomType];
+
+    const genderLabel = data.gender === 'male' ? 'Laki-laki' : 'Perempuan';
+
+    const message = `Assalamualaikum, saya ingin konfirmasi pendaftaran:
+
+*PAKET:* ${packageTitle}
+
+*DATA JAMAAH:*
+- Nama: ${data.fullName}
+- NIK: ${data.nik}
+- Tempat/Tgl Lahir: ${data.birthPlace}, ${data.birthDate}
+- Jenis Kelamin: ${genderLabel}
+- No. HP: ${data.phone}
+- Email: ${data.email}
+- Alamat: ${data.address}
+${data.passportNumber ? `- No. Paspor: ${data.passportNumber}` : ''}
+
+*KONTAK DARURAT:*
+- Nama: ${data.emergencyContact}
+- No. HP: ${data.emergencyPhone}
+
+*TIPE KAMAR:* ${roomTypeLabel}
+${data.notes ? `\n*CATATAN:* ${data.notes}` : ''}
+
+Mohon informasi selanjutnya untuk proses pembayaran. Terima kasih.`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const onSubmit = async (data: RegistrationFormData) => {
     if (!user) {
       toast({
@@ -143,10 +183,13 @@ const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) =>
       return;
     }
     
+    // Buka WhatsApp dengan pesan pre-filled
+    openWhatsAppWithMessage(data);
+    
     setIsSuccess(true);
     toast({
       title: 'Pendaftaran Berhasil!',
-      description: 'Tim kami akan segera menghubungi Anda untuk konfirmasi.',
+      description: 'WhatsApp terbuka untuk konfirmasi dengan admin.',
     });
   };
 
@@ -185,10 +228,21 @@ const RegistrationForm = ({ packageId, packageTitle }: RegistrationFormProps) =>
           Tim kami akan menghubungi Anda dalam 1x24 jam untuk konfirmasi.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={() => navigate('/dashboard')} variant="gold">
+          <Button 
+            onClick={() => {
+              const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}`;
+              window.open(whatsappUrl, '_blank');
+            }} 
+            variant="gold"
+            className="gap-2"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Hubungi Admin via WhatsApp
+          </Button>
+          <Button onClick={() => navigate('/dashboard')} variant="outline">
             Lihat Status Booking
           </Button>
-          <Button onClick={() => setIsSuccess(false)} variant="outline">
+          <Button onClick={() => setIsSuccess(false)} variant="ghost">
             Daftar Lagi
           </Button>
         </div>
