@@ -25,11 +25,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
+  // Redirect sekarang ditangani oleh ProtectedRoute
 
   useEffect(() => {
     const fetchRegistrations = async () => {
