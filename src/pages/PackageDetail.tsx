@@ -1,5 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { packages, formatPrice } from '@/data/packages';
+import { useState, useEffect } from 'react';
+import { formatPrice } from '@/data/packages';
+import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppFloatingButton from '@/components/WhatsAppFloatingButton';
@@ -12,17 +14,60 @@ import {
   Clock, 
   ChevronLeft,
   CheckCircle,
-  XCircle,
-  MapPin,
-  Wifi,
   Utensils,
   Building,
-  Plane
+  Plane,
+  Loader2
 } from 'lucide-react';
+
+interface DatabasePackage {
+  id: number;
+  title: string;
+  type: string;
+  price: number;
+  discount_price: number | null;
+  duration: string;
+  departure_date: string;
+  quota: number;
+  available_quota: number;
+  hotel_makkah: string | null;
+  hotel_makkah_stars: number | null;
+  hotel_madinah: string | null;
+  hotel_madinah_stars: number | null;
+  highlights: string[] | null;
+  image_url: string | null;
+  is_active: boolean;
+}
 
 const PackageDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const pkg = packages.find(p => p.id === Number(id));
+  const [pkg, setPkg] = useState<DatabasePackage | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPackage = async () => {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('id', Number(id))
+        .maybeSingle();
+
+      if (!error && data) {
+        setPkg(data);
+      }
+      setLoading(false);
+    };
+
+    fetchPackage();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!pkg) {
     return (
@@ -45,6 +90,9 @@ const PackageDetail = () => {
     );
   }
 
+  const hotelStars = pkg.hotel_makkah_stars || 5;
+  const displayPrice = pkg.discount_price || pkg.price;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -53,7 +101,7 @@ const PackageDetail = () => {
       <section className="relative h-[50vh] min-h-[400px]">
         <div 
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${pkg.image})` }}
+          style={{ backgroundImage: `url(${pkg.image_url || '/placeholder.svg'})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/40 to-background" />
         </div>
@@ -74,9 +122,9 @@ const PackageDetail = () => {
               }`}>
                 {pkg.type === 'haji' ? 'HAJI' : 'UMRAH'}
               </span>
-              {pkg.isPopular && (
+              {pkg.discount_price && (
                 <span className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-gold/20 text-gold border border-gold">
-                  POPULER
+                  DISKON
                 </span>
               )}
             </div>
@@ -88,20 +136,20 @@ const PackageDetail = () => {
             <div className="flex flex-wrap items-center gap-4 text-primary-foreground/90">
               <span className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                {pkg.date}
+                {pkg.departure_date}
               </span>
               <span className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 {pkg.duration}
               </span>
               <span className="flex items-center gap-1">
-                {[...Array(pkg.hotelRating)].map((_, i) => (
+                {[...Array(hotelStars)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-gold text-gold" />
                 ))}
               </span>
               <span className="flex items-center gap-2 bg-card/20 backdrop-blur-sm px-3 py-1 rounded-full">
                 <Users className="w-4 h-4" />
-                Sisa {pkg.seatsLeft} kursi
+                Sisa {pkg.available_quota} kursi
               </span>
             </div>
           </div>
@@ -120,157 +168,115 @@ const PackageDetail = () => {
                   Tentang Paket Ini
                 </h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  {pkg.description}
+                  Paket perjalanan ibadah {pkg.type === 'haji' ? 'Haji' : 'Umrah'} dengan durasi {pkg.duration}. 
+                  Berangkat pada tanggal {pkg.departure_date} dengan akomodasi hotel bintang {hotelStars}.
                 </p>
                 
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {pkg.highlights.map((highlight, i) => (
-                    <span
-                      key={i}
-                      className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full font-medium"
-                    >
-                      {highlight}
-                    </span>
-                  ))}
+                {pkg.highlights && pkg.highlights.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {pkg.highlights.map((highlight, i) => (
+                      <span
+                        key={i}
+                        className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full font-medium"
+                      >
+                        {highlight}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Hotels */}
+              <div className="bg-card rounded-2xl p-6 shadow-card">
+                <h2 className="font-heading text-2xl font-bold text-foreground mb-6">
+                  Akomodasi Hotel
+                </h2>
+                
+                <div className="grid gap-4">
+                  {pkg.hotel_makkah && (
+                    <div className="bg-secondary/50 rounded-xl p-5 border border-border">
+                      <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Building className="w-5 h-5 text-primary" />
+                            <h3 className="font-heading font-bold text-foreground">
+                              {pkg.hotel_makkah}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-1 mb-2">
+                            {[...Array(pkg.hotel_makkah_stars || 5)].map((_, i) => (
+                              <Star key={i} className="w-4 h-4 fill-gold text-gold" />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full">
+                          Makkah
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {pkg.hotel_madinah && (
+                    <div className="bg-secondary/50 rounded-xl p-5 border border-border">
+                      <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Building className="w-5 h-5 text-primary" />
+                            <h3 className="font-heading font-bold text-foreground">
+                              {pkg.hotel_madinah}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-1 mb-2">
+                            {[...Array(pkg.hotel_madinah_stars || 5)].map((_, i) => (
+                              <Star key={i} className="w-4 h-4 fill-gold text-gold" />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full">
+                          Madinah
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Itinerary */}
-              {pkg.itinerary && pkg.itinerary.length > 0 && (
-                <div className="bg-card rounded-2xl p-6 shadow-card">
-                  <h2 className="font-heading text-2xl font-bold text-foreground mb-6">
-                    Itinerary Perjalanan
-                  </h2>
-                  
-                  <div className="relative">
-                    {/* Timeline line */}
-                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-primary/20" />
-                    
-                    <div className="space-y-6">
-                      {pkg.itinerary.map((day, index) => (
-                        <div key={day.day} className="relative pl-12">
-                          {/* Timeline dot */}
-                          <div className="absolute left-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                            {day.day}
-                          </div>
-                          
-                          <div className={`bg-secondary/50 rounded-xl p-4 ${
-                            index === 0 || index === pkg.itinerary!.length - 1 
-                              ? 'border-2 border-primary/30' 
-                              : ''
-                          }`}>
-                            <h3 className="font-heading font-bold text-foreground mb-1">
-                              Hari {day.day}: {day.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mb-3">
-                              {day.description}
-                            </p>
-                            <ul className="space-y-1">
-                              {day.activities.map((activity, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                                  <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                  {activity}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Hotels */}
-              {pkg.hotels && pkg.hotels.length > 0 && (
-                <div className="bg-card rounded-2xl p-6 shadow-card">
-                  <h2 className="font-heading text-2xl font-bold text-foreground mb-6">
-                    Akomodasi Hotel
-                  </h2>
-                  
-                  <div className="grid gap-4">
-                    {pkg.hotels.map((hotel, index) => (
-                      <div 
-                        key={index} 
-                        className="bg-secondary/50 rounded-xl p-5 border border-border"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <Building className="w-5 h-5 text-primary" />
-                              <h3 className="font-heading font-bold text-foreground">
-                                {hotel.name}
-                              </h3>
-                            </div>
-                            <div className="flex items-center gap-1 mb-2">
-                              {[...Array(hotel.rating)].map((_, i) => (
-                                <Star key={i} className="w-4 h-4 fill-gold text-gold" />
-                              ))}
-                            </div>
-                          </div>
-                          <span className="bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full">
-                            {hotel.location}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
-                          <MapPin className="w-4 h-4" />
-                          {hotel.distance}
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-2">
-                          {hotel.amenities.map((amenity, i) => (
-                            <span 
-                              key={i}
-                              className="inline-flex items-center gap-1 text-xs bg-background px-2 py-1 rounded text-muted-foreground"
-                            >
-                              {amenity.includes('WiFi') && <Wifi className="w-3 h-3" />}
-                              {(amenity.includes('Makan') || amenity.includes('Meals') || amenity.includes('Sarapan')) && <Utensils className="w-3 h-3" />}
-                              {amenity}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Includes & Excludes */}
-              <div className="grid md:grid-cols-2 gap-6">
-                {pkg.includes && (
-                  <div className="bg-card rounded-2xl p-6 shadow-card">
-                    <h3 className="font-heading text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-primary" />
-                      Termasuk dalam Paket
-                    </h3>
-                    <ul className="space-y-2">
-                      {pkg.includes.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                          <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {pkg.excludes && (
-                  <div className="bg-card rounded-2xl p-6 shadow-card">
-                    <h3 className="font-heading text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                      <XCircle className="w-5 h-5 text-destructive" />
-                      Tidak Termasuk
-                    </h3>
-                    <ul className="space-y-2">
-                      {pkg.excludes.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <XCircle className="w-4 h-4 text-destructive/60 mt-0.5 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              {/* Includes */}
+              <div className="bg-card rounded-2xl p-6 shadow-card">
+                <h3 className="font-heading text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-primary" />
+                  Termasuk dalam Paket
+                </h3>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    Tiket pesawat pulang-pergi
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    Akomodasi hotel bintang {hotelStars}
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    Makan 3x sehari (menu Indonesia/Internasional)
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    Transportasi bus AC selama di tanah suci
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    Pembimbing ibadah berpengalaman
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    Perlengkapan umrah/haji
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    Asuransi perjalanan
+                  </li>
+                </ul>
               </div>
             </div>
 
@@ -283,12 +289,12 @@ const PackageDetail = () => {
                     <span className="text-sm text-muted-foreground">Mulai dari</span>
                     <div className="flex items-end justify-center gap-2">
                       <span className="font-heading text-3xl md:text-4xl font-bold text-primary">
-                        {formatPrice(pkg.price)}
+                        {formatPrice(displayPrice)}
                       </span>
                     </div>
-                    {pkg.originalPrice && (
+                    {pkg.discount_price && (
                       <span className="text-muted-foreground line-through text-sm">
-                        {formatPrice(pkg.originalPrice)}
+                        {formatPrice(pkg.price)}
                       </span>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">per orang</p>
@@ -301,7 +307,7 @@ const PackageDetail = () => {
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <Building className="w-5 h-5 text-primary" />
-                      <span className="text-foreground">Hotel {pkg.hotelRating} bintang</span>
+                      <span className="text-foreground">Hotel {hotelStars} bintang</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <Utensils className="w-5 h-5 text-primary" />
@@ -319,9 +325,9 @@ const PackageDetail = () => {
                     className="w-full mb-3"
                     onClick={() => {
                       const message = encodeURIComponent(
-                        `Assalamualaikum, saya tertarik dengan paket *${pkg.title}* dengan harga ${formatPrice(pkg.price)}. Mohon informasi lebih lanjut.`
+                        `Assalamualaikum, saya tertarik dengan paket *${pkg.title}* dengan harga ${formatPrice(displayPrice)}. Mohon informasi lebih lanjut.`
                       );
-                      window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+                      window.open(`https://wa.me/6287782408192?text=${message}`, '_blank');
                     }}
                   >
                     Tanya via WhatsApp
